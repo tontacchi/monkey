@@ -106,15 +106,14 @@ func (lex *Lexer) NextToken() (nextToken token.Token) {
 
 //---[ Lexer Helper Methods ]---------------------------------------------------
 func (lex *Lexer) readChar() {
-	// EOF reached
+	// EOF / char harvesting control flow
 	if lex.readPosition >= len(lex.input) {
 		lex.char = 0
-		return
+	} else {
+		lex.char = lex.input[lex.readPosition]
 	}
 
-	// read next char + ready readPos for next char
-	lex.char = lex.input[lex.readPosition]
-
+	// setup for next char to read
 	lex.position = lex.readPosition
 	lex.readPosition++
 }
