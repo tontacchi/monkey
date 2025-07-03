@@ -33,9 +33,22 @@ const (
 // type alias (change to enums later?)
 type TokenType string
 
+var keywords = map[string]TokenType{
+	"fn":  FUNCTION,
+	"let": LET,
+}
+
 type Token struct {
 	Type    TokenType
 	Literal string
 }
 
+// Checks if identifier is in keywords map
+func LookupIdentifier(identifier string) TokenType {
+	if keyword, ok := keywords[identifier]; ok {
+		return keyword
+	}
+
+	return IDENT
+}
 
