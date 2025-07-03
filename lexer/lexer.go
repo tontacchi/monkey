@@ -32,7 +32,37 @@ func (lex *Lexer) NextToken() (nextToken token.Token) {
 	// Decide next token
 	switch lex.char {
 	case '=':
-		nextToken = newToken(token.ASSIGN, lex.char)
+		if lex.peekChar() == '=' {
+			char := lex.char
+			lex.readChar()
+
+			nextToken.Type    = token.EQ
+			nextToken.Literal = string(char) + string(lex.char)
+		} else {
+			nextToken = newToken(token.ASSIGN, lex.char)
+		}
+	case '+':
+		nextToken = newToken(token.PLUS, lex.char)
+	case '-':
+		nextToken = newToken(token.MINUS, lex.char)
+	case '!':
+		if lex.peekChar() == '=' {
+			currChar := lex.char
+			lex.readChar()
+
+			nextToken.Type    = token.NOT_EQ
+			nextToken.Literal = string(currChar) + string(lex.char)
+		} else {
+			nextToken = newToken(token.BANG, lex.char)
+		}
+	case '/':
+		nextToken = newToken(token.SLASH, lex.char)
+	case '*':
+		nextToken = newToken(token.ASTERISK, lex.char)
+	case '<':
+		nextToken = newToken(token.LT, lex.char)
+	case '>':
+		nextToken = newToken(token.GT, lex.char)
 	case ';':
 		nextToken = newToken(token.SEMICOLON, lex.char)
 	case '(':
@@ -41,8 +71,6 @@ func (lex *Lexer) NextToken() (nextToken token.Token) {
 		nextToken = newToken(token.RPAREN, lex.char)
 	case ',':
 		nextToken = newToken(token.COMMA, lex.char)
-	case '+':
-		nextToken = newToken(token.PLUS, lex.char)
 	case '{':
 		nextToken = newToken(token.LBRACE, lex.char)
 	case '}':
@@ -59,9 +87,13 @@ func (lex *Lexer) NextToken() (nextToken token.Token) {
 			nextToken.Literal = lex.readIdentifier()
 			nextToken.Type    = token.LookupIdentifier(nextToken.Literal)
 			return nextToken
+		} else if isDigit(lex.char) {
+			nextToken.Literal = lex.readInt()
+			nextToken.Type    = token.INT
+			return nextToken
+		} else {
+			nextToken = newToken(token.ILLEGAL, lex.char)
 		}
-
-		nextToken = newToken(token.ILLEGAL, lex.char)
 	}
 
 	// Move the cursor to the next character
@@ -93,8 +125,18 @@ func (lex *Lexer) readIdentifier() string {
 	for isLetter(lex.char) {
 		lex.readChar()
 	}
-
 	until := lex.position 
+
+	return lex.input[start:until]
+}
+
+func (lex *Lexer) readInt() string {
+	start := lex.position
+
+	for isDigit(lex.char) {
+		lex.readChar()
+	}
+	until := lex.position	
 
 	return lex.input[start:until]
 }
@@ -103,6 +145,12 @@ func (lex *Lexer) skipWhitespace() {
 	for lex.char == ' ' || lex.char == '\t' || lex.char == '\n' || lex.char == '\r' {
 		lex.readChar()
 	}
+}
+
+func (lex *Lexer) peekChar() byte {
+	if lex.readPosition >= len(lex.input) { return 0 }
+
+	return lex.input[lex.readPosition]
 }
 
 //---[ Lexer Helper Methods ]---------------------------------------------------
@@ -118,6 +166,10 @@ func newToken(tokenType token.TokenType, char byte) token.Token {
 
 func isLetter(char byte) bool {
 	return 'a' <= char && char <= 'z' || 'A' <= char && char <= 'Z' || char == '_'
+}
+
+func isDigit(char byte) bool {
+	return '0' <= char && char <= '9'
 }
 
 //---[ Package Helper Methods ]-------------------------------------------------
