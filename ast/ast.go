@@ -43,7 +43,7 @@ type Identifier struct {
 
 func (identifier *Identifier) expressionNode() {}  // simplifies using identifiers as RHS values
 
-func (identifier *Identifier) TokenIdentifier() string {
+func (identifier *Identifier) TokenLiteral() string {
 	return identifier.Token.Literal
 }
 
@@ -56,7 +56,7 @@ type LetStatement struct {
 
 func (let *LetStatement) statementNode() {}
 
-func (let *LetStatement) TokenIdentifier() string {
+func (let *LetStatement) TokenLiteral() string {
 	return let.Token.Literal
 }
 
