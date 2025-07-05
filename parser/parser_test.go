@@ -20,7 +20,8 @@ let foobar = 838383;
 	// sanity check: valid program + statement count matches input's
 	if program == nil {
 		t.Fatalf("ParseProgram() returned nil")
-	} else if len(program.Statements) != 3 {
+	}
+	if len(program.Statements) != 3 {
 		t.Fatalf("program.Statements does not contain 3 statements. got %d",
 			len(program.Statements),
 		)
@@ -37,8 +38,8 @@ let foobar = 838383;
 
 	for index, test := range tests {
 		statement := program.Statements[index]
-		if false {
-
+		if !testLetStatement(t, statement, test.expectedIdentifier) {
+			return
 		}
 	}
 }
