@@ -26,7 +26,6 @@ type Program struct {
 	Statements []Statement
 }
 
-// Program now implements the Node interface
 func (program *Program) TokenLiteral() string {
 	if len(program.Statements) <= 0 {
 		return ""

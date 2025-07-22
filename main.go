@@ -17,7 +17,7 @@ func main() {
 	}
 
 	fmt.Printf("Hello, %s! This is the Monkey Programming Language REPL!\n", user.Username)
-	fmt.Println("Enter commands after the monkey prompt.\n")
+	fmt.Printf("Enter commands after the monkey prompt.\n\n")
 
 	// start REPL (language "shell")
 	repl.Start(os.Stdin, os.Stdout)

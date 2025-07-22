@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"monkey/ast"
 	"monkey/lexer"
 	"monkey/token"
@@ -10,6 +12,7 @@ type Parser struct {
 	lex       *lexer.Lexer
 	currToken token.Token
 	peekToken token.Token
+	errors    []string
 }
 
 
@@ -17,7 +20,8 @@ type Parser struct {
 
 func New(lex *lexer.Lexer) *Parser {
 	parser := &Parser{
-		lex: lex,
+		lex:    lex,
+		errors: []string{},
 	}
 
 	// sets currToken & peekToken
@@ -34,11 +38,13 @@ func New(lex *lexer.Lexer) *Parser {
 //---[ Parser API Methods ]-----------------------------------------------------
 
 func (parser *Parser) ParseProgram() *ast.Program {
-	program := &ast.Program{}
-	program.Statements = []ast.Statement{}
+	program := &ast.Program{
+		Statements: []ast.Statement{},
+	}
 
 	for parser.currToken.Type != token.EOF {
 		statement := parser.parseStatement()
+
 		if statement != nil {
 			program.Statements = append(program.Statements, statement)
 		}
@@ -47,6 +53,10 @@ func (parser *Parser) ParseProgram() *ast.Program {
 	}
 
 	return program
+}
+
+func (parser *Parser) Errors() []string {
+	return parser.errors
 }
 
 //---[ Parser API Methods ]-----------------------------------------------------
@@ -95,6 +105,7 @@ func (parser *Parser) parseLetStatement() *ast.LetStatement {
 	return statement
 }
 
+// helpers for parseLetStatement()
 func (parser *Parser) currTokenIs(tokenType token.TokenType) bool {
 	return parser.currToken.Type == tokenType
 }
@@ -104,12 +115,24 @@ func (parser *Parser) peekTokenIs(tokenType token.TokenType) bool {
 }
 
 func (parser *Parser) expectPeek(tokenType token.TokenType) bool {
-	if parser.peekTokenIs(tokenType) {
-		parser.nextToken()
-		return true
+	if !parser.peekTokenIs(tokenType) {
+		parser.peekError(tokenType)
+		return false
 	}
 
-	return false
+	parser.nextToken()
+	return true
+}
+
+// helper for Errors()
+func (parser *Parser) peekError(tokenType token.TokenType) {
+	message := fmt.Sprintf(
+		"expected next token to be %s, got %s instead",
+		tokenType,
+		parser.peekToken.Type,
+	)
+	
+	parser.errors = append(parser.errors, message)
 }
 
 //---[ Parser Helper Methods ]--------------------------------------------------

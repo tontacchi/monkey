@@ -5,18 +5,26 @@ import (
 )
 
 type Lexer struct {
-	input        string
-	position     int     // index of current char in input
-	readPosition int     // index of char after current char in input
+	input        string  // Full source code
+	position     int     // cursor's current index -> char's index
+	readPosition int     // index after cursor's current index
 	char         byte    // current byte examined (pointed to by position)
 }
 
 //---[ Public Package Methods ]-------------------------------------------------
+
 func New(input string) (newLexer *Lexer) {
 	newLexer = &Lexer{
 		input: input,
 	}
+
+	// everything set to 0
+	// important: readPosition & position both: 0
 	newLexer.readChar()
+
+	// invariants: (load char, sets up readPosition)
+	// - char: input[0], position: 0
+	// - readPosition: 1
 
 	return newLexer
 }
@@ -25,9 +33,12 @@ func New(input string) (newLexer *Lexer) {
 
 
 //---[ Lexer API Methods ]------------------------------------------------------
+
 func (lex *Lexer) NextToken() (nextToken token.Token) {
 	// Ignore whitespace
 	lex.skipWhitespace()
+
+	// invariant: char: input[position] is an alphanum character
 
 	// Decide next token
 	switch lex.char {
@@ -84,19 +95,37 @@ func (lex *Lexer) NextToken() (nextToken token.Token) {
 		nextToken.Type    = token.EOF
 	default:
 		if isLetter(lex.char) {
+			// char is letter / _ -> identifier (variable) or keyword
 			nextToken.Literal = lex.readIdentifier()
 			nextToken.Type    = token.LookupIdentifier(nextToken.Literal)
+
+			// invariant: Token either a:
+			// - variable (Type: IDENT)
+			// - keyword  (Type: LET, FUNC, etc.)
+			//   - Literal: text from input (varName, let, function)
+
 			return nextToken
 		} else if isDigit(lex.char) {
+			// char is number -> automatically an int value
 			nextToken.Literal = lex.readInt()
 			nextToken.Type    = token.INT
+
+			// invariant: Token is a:
+			// - integer token (Type: INT)
+			// - literal -> number as a string typed out in code
+
 			return nextToken
 		} else {
+			// char not alphanum or other symbols -> Illegal
 			nextToken = newToken(token.ILLEGAL, lex.char)
+
+			// invariant: Token is a:
+			// - unknown combo of chars (Type: ILLEGAL)
+			// - literal -> garbled combo of characters
 		}
 	}
 
-	// Move the cursor to the next character
+	// Move the cursor beyond end of current token
 	lex.readChar()
 	return nextToken
 }
@@ -105,6 +134,7 @@ func (lex *Lexer) NextToken() (nextToken token.Token) {
 
 
 //---[ Lexer Helper Methods ]---------------------------------------------------
+
 func (lex *Lexer) readChar() {
 	// EOF / char harvesting control flow
 	if lex.readPosition >= len(lex.input) {
@@ -156,6 +186,7 @@ func (lex *Lexer) peekChar() byte {
 
 
 //---[ Package Helper Methods ]-------------------------------------------------
+
 func newToken(tokenType token.TokenType, char byte) token.Token {
 	return token.Token{
 		Type:    tokenType,
