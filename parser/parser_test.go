@@ -7,15 +7,17 @@ import (
 	"monkey/lexer"
 )
 
+//―――[ Main Tests ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+
 func TestLetStatements(t *testing.T) {
 	tests := []struct {
 		input         string
 		expectedIdent string
-		expectedValue interface{}
+		expectedValue any
 	}{
-		{"let x  5;", "x", 5},
-		{"let  = true;", "y", true},
-		{"let  25;", "foobar", "y"},
+		{"let x = 5;", "x", 5},
+		{"let y = true;", "y", true},
+		{"let foobar = y;", "foobar", "y"},
 	}
 
 	for _, test := range tests {
@@ -40,6 +42,46 @@ func TestLetStatements(t *testing.T) {
 		// testLiteralExpression(t, val, test.expectedValue)
 	}
 }
+
+func TestReturnStatements(t *testing.T) {
+	input := `
+return 5;
+return 10;
+return 993322;
+`
+	
+	lex     := lexer.New(input)
+	parser  := New(lex)
+	program := parser.ParseProgram()
+
+	checkParserErrors(t, parser)
+
+	if len(program.Statements) != 3 {
+		t.Fatalf(
+			"program.Statements does not contain 3 statements. got=%d",
+			len(program.Statements),
+		)
+	}
+
+	for _, statement := range program.Statements {
+		returnStatement, ok := statement.(*ast.ReturnStatement)
+		if !ok {
+			t.Errorf("statement not *ast.ReturnStatement, got=%T", statement)
+		}
+
+		if returnStatement.TokenLiteral() != "return" {
+			t.Errorf(
+				"returnStatement.TokenLiteral() not `return`, got %q",
+				returnStatement.TokenLiteral(),
+			)
+		}
+	}
+}
+
+//―――[ Main Tests ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+
+
+//―――[ Helper Functions ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) {
 	if s.TokenLiteral() != "let" {
@@ -67,9 +109,12 @@ func checkParserErrors(t *testing.T, parser *Parser) {
 	if numErrors == 0 { return }
 
 	t.Errorf("parser has %d errors", numErrors)
-	for _, errMsg := range errors {
-		t.Errorf("parser error: %q", errMsg)
+	for _, errorMsg := range errors {
+		t.Errorf("parser error: %q", errorMsg)
 	}
 
 	t.FailNow()
 }
+
+//―――[ Helper Functions ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――
+

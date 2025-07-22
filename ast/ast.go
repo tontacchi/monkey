@@ -59,3 +59,15 @@ func (let *LetStatement) TokenLiteral() string {
 	return let.Token.Literal
 }
 
+
+type ReturnStatement struct {
+	Token       token.Token  // should always be token.RETURN
+	ReturnValue Expression   // produces value to give to caller
+}
+
+func (ret *ReturnStatement) statementNode() {}
+
+func (ret *ReturnStatement) TokenLiteral() string {
+	return ret.Token.Literal
+}
+
