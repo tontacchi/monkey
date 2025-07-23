@@ -48,7 +48,9 @@ func New(lex *lexer.Lexer) *Parser {
 	// register tokens & their parse functions
 	parser.prefixParseMap = make(map[token.TokenType]prefixParseFn)
 	parser.registerPrefix(token.IDENT, parser.parseIdentifier)
-	parser.registerPrefix(token.INT, parser.parseIntegerLiteral)
+	parser.registerPrefix(token.INT,   parser.parseIntegerLiteral)
+	parser.registerPrefix(token.BANG,  parser.parsePrefixExpression)
+	parser.registerPrefix(token.MINUS, parser.parsePrefixExpression)
 
 	// sets currToken & peekToken
 	parser.nextToken()
@@ -167,6 +169,7 @@ func (parser *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (parser *Parser) parseExpression(precedence int) ast.Expression {
 	prefixFunc, ok := parser.prefixParseMap[parser.currToken.Type]
 	if !ok {
+		parser.noPrefixParseFuncError(parser.currToken.Type)
 		return nil
 	}
 
@@ -198,6 +201,19 @@ func (parser *Parser) parseIntegerLiteral() ast.Expression {
 
 	return literal
 }
+
+func (parser *Parser) parsePrefixExpression() ast.Expression {
+	expression := &ast.PrefixExpression{
+		Token:    parser.currToken,
+		Operator: parser.currToken.Literal,
+	}
+
+	parser.nextToken()
+	expression.Right = parser.parseExpression(PREFIX)
+
+	return expression
+}
+
 
 // helpers for parseLetStatement()
 func (parser *Parser) currTokenIs(tokenType token.TokenType) bool {
@@ -237,6 +253,13 @@ func (parser *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn
 
 func (parser *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 	parser.infixParseMap[tokenType] = fn
+}
+
+
+// parseExpression() helper for better error messages
+func (parser *Parser) noPrefixParseFuncError(t token.TokenType) {
+	message := fmt.Sprintf("no prefix parse function for %s found", t)
+	parser.errors = append(parser.errors, message)
 }
 
 //---[ Parser Helper Methods ]--------------------------------------------------
