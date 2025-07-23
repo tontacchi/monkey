@@ -78,6 +78,56 @@ return 993322;
 	}
 }
 
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "foobar;"
+
+	lex     := lexer.New(input)
+	parser  := New(lex)
+	program := parser.ParseProgram()
+
+	checkParserErrors(t, parser)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf(
+			"program contains incorrect number of statements. got=%d",
+			len(program.Statements),
+		)
+	}
+
+	statement, ok := program.Statements[0].(*ast.ExpressionStatement) 
+	if !ok {
+		t.Fatalf(
+			"program.Statements[0] is not *ast.ExpressionStatement. got=%T",
+			program.Statements[0],
+		)
+	}
+
+	identifier, ok := statement.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf(
+			"expression is not *ast.Identifier. got=%T",
+			statement.Expression,
+		)
+	}
+
+	if identifier.Value != "foobar" {
+		t.Errorf(
+			"identifier.Value not %s. got=%s",
+			"foobar",
+			identifier.Value,
+		)
+	}
+	
+	if identifier.TokenLiteral() != "foobar" {
+		t.Errorf(
+			"identifer.TokenLiteral is not %s. got=%s",
+			"foobar",
+			identifier.TokenLiteral(),
+		)
+	}
+}
+
 //―――[ Main Tests ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
 
