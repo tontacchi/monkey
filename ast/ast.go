@@ -71,3 +71,15 @@ func (ret *ReturnStatement) TokenLiteral() string {
 	return ret.Token.Literal
 }
 
+
+type ExpressionStatement struct {
+	Token      token.Token
+	Expression Expression
+}
+
+func (exp *ExpressionStatement) statementNode() {}
+
+func (exp *ExpressionStatement) TokenLiteral() string {
+	return exp.Token.Literal
+}
+
