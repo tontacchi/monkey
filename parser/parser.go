@@ -8,11 +8,21 @@ import (
 	"monkey/token"
 )
 
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
 type Parser struct {
 	lex       *lexer.Lexer
+	errors    []string
+
 	currToken token.Token
 	peekToken token.Token
-	errors    []string
+
+	prefixParseMap map[token.TokenType]prefixParseFn
+	infixParseMap  map[token.TokenType]infixParseFn
 }
 
 
@@ -150,6 +160,16 @@ func (parser *Parser) peekError(tokenType token.TokenType) {
 	)
 	
 	parser.errors = append(parser.errors, message)
+}
+
+
+// helper for token -> parse function maps setup
+func (parser *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	parser.prefixParseMap[tokenType] = fn
+}
+
+func (parser *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	parser.infixParseMap[tokenType] = fn
 }
 
 //---[ Parser Helper Methods ]--------------------------------------------------
