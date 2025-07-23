@@ -8,6 +8,16 @@ import (
 	"monkey/token"
 )
 
+const (
+	_ int = iota
+	LOWEST      
+	EQUALS       // ==
+	LESSGREATER  // <, >
+	SUM          // +
+	PRODUCT      // *
+	PREFIX       // -x, !x
+	CALL         // f()
+)
 
 type (
 	prefixParseFn func() ast.Expression
@@ -33,6 +43,9 @@ func New(lex *lexer.Lexer) *Parser {
 		lex:    lex,
 		errors: []string{},
 	}
+
+	parser.prefixParseMap = make(map[token.TokenType]prefixParseFn)
+	parser.registerPrefix(token.IDENT, parser.parseIdentifier)
 
 	// sets currToken & peekToken
 	parser.nextToken()
@@ -87,7 +100,7 @@ func (parser *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return parser.parseReturnStatement()
 	default:
-		return nil
+		return parser.parseExpressionStatement()
 	}
 }
 
@@ -130,6 +143,39 @@ func (parser *Parser) parseReturnStatement() *ast.ReturnStatement {
 	}
 
 	return statement
+}
+
+func (parser *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	statement := &ast.ExpressionStatement{
+		Token: parser.currToken,
+	}
+
+	statement.Expression = parser.parseExpression(LOWEST)
+
+	// optional semicolons -> easier REPL input
+	if parser.peekTokenIs(token.SEMICOLON) {
+		parser.nextToken()
+	}
+
+	return statement
+}
+
+
+func (parser *Parser) parseExpression(precedence int) ast.Expression {
+	prefixFunc, ok := parser.prefixParseMap[parser.currToken.Type]
+	if !ok {
+		return nil
+	}
+
+	leftExp := prefixFunc()
+	return leftExp
+}
+
+func (parser *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{
+		Token: parser.currToken,
+		Value: parser.currToken.Literal,
+	}
 }
 
 // helpers for parseLetStatement()
