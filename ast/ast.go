@@ -2,11 +2,13 @@ package ast
 
 import (
 	"monkey/token"
+	"bytes"
 )
 
 //---[ Node Interfaces ]--------------------------------------------------------
 type Node interface {
 	TokenLiteral() string
+	String()       string
 }
 
 type Statement interface {
@@ -34,6 +36,16 @@ func (program *Program) TokenLiteral() string {
 	return program.Statements[0].TokenLiteral()
 }
 
+func (program *Program) String() string {
+	var buffer bytes.Buffer
+
+	for _, statement := range program.Statements {
+		buffer.WriteString(statement.String())
+	}
+
+	return buffer.String()
+}
+
 
 type Identifier struct {
 	Token token.Token  // token.IDENT
@@ -44,6 +56,10 @@ func (identifier *Identifier) expressionNode() {}  // simplifies using identifie
 
 func (identifier *Identifier) TokenLiteral() string {
 	return identifier.Token.Literal
+}
+
+func (identifier *Identifier) String() string {
+	return identifier.Value
 }
 
 
@@ -59,6 +75,21 @@ func (let *LetStatement) TokenLiteral() string {
 	return let.Token.Literal
 }
 
+func (let *LetStatement) String() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString(let.TokenLiteral() + " ")
+	buffer.WriteString(let.Name.String())
+	buffer.WriteString(" = ")
+
+	if let.Value != nil {
+		buffer.WriteString(let.Value.String())
+	}
+
+	buffer.WriteString(";")
+	return buffer.String()
+}
+
 
 type ReturnStatement struct {
 	Token       token.Token  // should always be token.RETURN
@@ -71,6 +102,19 @@ func (ret *ReturnStatement) TokenLiteral() string {
 	return ret.Token.Literal
 }
 
+func (ret *ReturnStatement) String() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString(ret.String() + " ")
+
+	if ret.ReturnValue != nil {
+		buffer.WriteString(ret.ReturnValue.String())
+	}
+
+	buffer.WriteString(";")
+	return buffer.String()
+}
+
 
 type ExpressionStatement struct {
 	Token      token.Token
@@ -81,5 +125,13 @@ func (exp *ExpressionStatement) statementNode() {}
 
 func (exp *ExpressionStatement) TokenLiteral() string {
 	return exp.Token.Literal
+}
+
+func (exp *ExpressionStatement) String() string {
+	if exp.Expression != nil {
+		return exp.Expression.String()
+	}
+
+	return ""
 }
 
