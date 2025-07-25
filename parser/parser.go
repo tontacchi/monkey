@@ -68,6 +68,8 @@ func New(lex *lexer.Lexer) *Parser {
 
 	parser.registerPrefix(token.LPAREN, parser.parseGroupedExpression)
 
+	parser.registerPrefix(token.IF, parser.parseIfExpression)
+
 	parser.infixParseMap = make(map[token.TokenType]infixParseFn)
 	parser.registerInfix(token.PLUS,     parser.parseInfixExpression)
 	parser.registerInfix(token.MINUS,    parser.parseInfixExpression)
@@ -191,6 +193,26 @@ func (parser *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return statement
 }
 
+func (parser *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{
+		Token:      parser.currToken,
+		Statements: []ast.Statement{},
+	}
+
+	parser.nextToken()
+
+	for !parser.currTokenIs(token.EOF) && !parser.currTokenIs(token.RBRACE) {
+		statement := parser.parseStatement()
+		if statement != nil {
+			block.Statements = append(block.Statements, statement)
+		}
+
+		parser.nextToken()
+	}
+
+	return block
+}
+
 
 func (parser *Parser) parseExpression(precedence int) ast.Expression {
 	prefixFunc, ok := parser.prefixParseMap[parser.currToken.Type]
@@ -277,6 +299,41 @@ func (parser *Parser) parseGroupedExpression() ast.Expression {
 	return expression
 }
 
+func (parser *Parser) parseIfExpression() ast.Expression {
+	expression := &ast.IfExpression{
+		Token: parser.currToken,
+	}
+	
+	if !parser.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	parser.nextToken()
+	expression.Condition = parser.parseExpression(LOWEST)
+
+	if !parser.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	if !parser.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	expression.Consequence = parser.parseBlockStatement()
+
+	if parser.peekTokenIs(token.ELSE) {
+		parser.nextToken()
+
+		if !parser.expectPeek(token.LBRACE) {
+			return nil
+		}
+
+		expression.Alternative = parser.parseBlockStatement()
+	}
+
+	return expression
+}
+
 
 func (parser *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression := &ast.InfixExpression{
@@ -294,6 +351,7 @@ func (parser *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 
 
 // helpers for parseLetStatement()
+
 func (parser *Parser) currTokenIs(tokenType token.TokenType) bool {
 	return parser.currToken.Type == tokenType
 }
