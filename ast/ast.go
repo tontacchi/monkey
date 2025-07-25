@@ -215,3 +215,55 @@ func (infix *InfixExpression) String() string {
 	return buffer.String()
 }
 
+
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (block *BlockStatement) statementNode() {}
+
+func (block *BlockStatement) TokenLiteral() string {
+	return block.Token.Literal
+}
+
+func (block *BlockStatement) String() string {
+	var buffer bytes.Buffer
+
+	for _, statement := range block.Statements {
+		buffer.WriteString(statement.String())
+	}
+
+	return buffer.String()
+}
+
+
+type IfExpression struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
+func (ifExp *IfExpression) expressionNode() {}
+
+func (ifExp *IfExpression) TokenLiteral() string {
+	return ifExp.Token.Literal
+}
+
+func (ifExp *IfExpression) String() string {
+	var buffer bytes.Buffer
+
+	buffer.WriteString("if")
+	buffer.WriteString(ifExp.Condition.String())
+	buffer.WriteString(" ")
+	buffer.WriteString(ifExp.Consequence.String())
+
+	if ifExp.Alternative != nil {
+		buffer.WriteString("else")
+		buffer.WriteString(ifExp.Alternative.String())
+	}
+
+	return buffer.String()
+}
+
