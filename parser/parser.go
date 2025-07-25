@@ -196,7 +196,11 @@ func (parser *Parser) parseExpression(precedence int) ast.Expression {
 
 	leftExp := prefixFunc()
 
-	for !parser.peekTokenIs(token.SEMICOLON) && precedence < parser.peekPrecedence() {
+	noSemicolonNext := !parser.peekTokenIs(token.SEMICOLON)
+	nextPrecLarger  := precedence < parser.peekPrecedence()
+
+	// keep building as long as the next precedence is larger
+	for noSemicolonNext && nextPrecLarger {
 		infixFunc, ok := parser.infixParseMap[parser.peekToken.Type]
 		if !ok {
 			return leftExp
@@ -204,6 +208,9 @@ func (parser *Parser) parseExpression(precedence int) ast.Expression {
 
 		parser.nextToken()
 		leftExp = infixFunc(leftExp)
+
+		noSemicolonNext = !parser.peekTokenIs(token.SEMICOLON)
+		nextPrecLarger  = precedence < parser.peekPrecedence()
 	}
 
 	return leftExp
