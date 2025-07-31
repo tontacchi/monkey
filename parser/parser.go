@@ -68,7 +68,8 @@ func New(lex *lexer.Lexer) *Parser {
 
 	parser.registerPrefix(token.LPAREN, parser.parseGroupedExpression)
 
-	parser.registerPrefix(token.IF, parser.parseIfExpression)
+	parser.registerPrefix(token.IF,       parser.parseIfExpression)
+	parser.registerPrefix(token.FUNCTION, parser.parseFunctionLiteral)
 
 	parser.infixParseMap = make(map[token.TokenType]infixParseFn)
 	parser.registerInfix(token.PLUS,     parser.parseInfixExpression)
@@ -334,6 +335,35 @@ func (parser *Parser) parseIfExpression() ast.Expression {
 	return expression
 }
 
+func (parser *Parser) parseFunctionLiteral() ast.Expression {
+	literal := &ast.FunctionLiteral{
+		Token: parser.currToken,
+	}
+
+	if !parser.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	fmt.Println("[DEBUG] parseFunctionLiteral: made it past (")
+
+	literal.Parameters = parser.parseFunctionParameters()
+
+	fmt.Println("[DEBUG] parseFunctionLiteral: parsed parameters")
+
+	if !parser.expectPeek(token.LBRACE) {
+		fmt.Println("[DEBUG] parseFunctionLiteral: next token was not {")
+		return nil
+	}
+
+	fmt.Println("[DEBUG] parseFunctionLiteral: made it past {")
+
+	literal.Body = parser.parseBlockStatement()
+
+	fmt.Println("[DEBUG] parseFunctionLiteral: made it past }")
+
+	return literal
+}
+
 
 func (parser *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	expression := &ast.InfixExpression{
@@ -368,6 +398,46 @@ func (parser *Parser) expectPeek(tokenType token.TokenType) bool {
 
 	parser.nextToken()
 	return true
+}
+
+
+// helper for parseFunctionLiteral()
+
+func (parser *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifiers := []*ast.Identifier{}
+
+	// case 1: empty parameter list -> ) immediately follows after (
+	if parser.peekTokenIs(token.RPAREN) {
+		parser.nextToken()
+		return identifiers
+	}
+
+	// case 2: parameters, possibly in comma separated list
+	parser.nextToken()
+
+	identifier := &ast.Identifier{
+		Token: parser.currToken,
+		Value: parser.currToken.Literal,
+	}
+	identifiers = append(identifiers, identifier)
+
+	for parser.peekTokenIs(token.COMMA) {
+		parser.nextToken()   // skips the comma
+		parser.nextToken()   // skips the whitespace
+
+		identifier := &ast.Identifier{
+			Token: parser.currToken,
+			Value: parser.currToken.Literal,
+		}
+
+		identifiers = append(identifiers, identifier)
+	}
+
+	if !parser.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return identifiers
 }
 
 

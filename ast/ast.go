@@ -1,8 +1,10 @@
 package ast
 
 import (
-	"monkey/token"
 	"bytes"
+	"strings"
+
+	"monkey/token"
 )
 
 //---[ Node Interfaces ]--------------------------------------------------------
@@ -263,6 +265,36 @@ func (ifExp *IfExpression) String() string {
 		buffer.WriteString("else")
 		buffer.WriteString(ifExp.Alternative.String())
 	}
+
+	return buffer.String()
+}
+
+
+type FunctionLiteral struct {
+	Token      token.Token
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+func (fl *FunctionLiteral) expressionNode() {}
+
+func (fl *FunctionLiteral) TokenLiteral() string {
+	return fl.Token.Literal
+}
+
+func (fl *FunctionLiteral) String() string {
+	var buffer bytes.Buffer
+
+	parameters := []string{}
+	for _, param := range fl.Parameters {
+		parameters = append(parameters, param.String())
+	}
+
+	buffer.WriteString(fl.TokenLiteral())
+	buffer.WriteString("(")
+	buffer.WriteString(strings.Join(parameters, ", "))
+	buffer.WriteString(")")
+	buffer.WriteString(fl.Body.String())
 
 	return buffer.String()
 }
